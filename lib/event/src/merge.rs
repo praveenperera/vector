@@ -1,4 +1,4 @@
-use crate::event::{LogEvent, Value};
+use super::{LogEvent, Value};
 use string_cache::DefaultAtom as Atom;
 
 /// Merges all fields specified at `merge_fields` from `incoming` to `current`.

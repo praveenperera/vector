@@ -1,5 +1,3 @@
-mod interop;
-
 use crate::{
     config_paths::CONFIG_PATHS,
     event::Event,

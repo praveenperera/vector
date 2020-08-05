@@ -5413,7 +5413,6 @@ dependencies = [
  "flate2",
  "futures 0.1.29",
  "futures 0.3.5",
- "getset",
  "glob 0.2.11",
  "goauth",
  "grok",
@@ -5452,7 +5451,6 @@ dependencies = [
  "pin-project",
  "pretty_assertions",
  "prost",
- "prost-build",
  "prost-types",
  "pulsar",
  "rand 0.5.6",
@@ -5509,9 +5507,33 @@ dependencies = [
  "typetag",
  "url",
  "uuid 0.7.4",
+ "vector-event",
  "vector-wasm",
  "walkdir",
  "warp",
+]
+
+[[package]]
+name = "vector-event"
+version = "0.1.0"
+dependencies = [
+ "bytes 0.4.12",
+ "bytes 0.5.4",
+ "chrono",
+ "derive_is_enum_variant",
+ "getset",
+ "lazy_static 1.4.0",
+ "once_cell",
+ "prost",
+ "prost-build",
+ "prost-types",
+ "regex",
+ "rlua",
+ "serde",
+ "serde_json",
+ "string_cache",
+ "toml 0.4.10",
+ "tracing",
 ]
 
 [[package]]
