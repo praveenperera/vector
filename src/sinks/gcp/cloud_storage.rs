@@ -1,5 +1,6 @@
 use super::{healthcheck_response, GcpAuthConfig, GcpCredentials, Scope};
 use crate::{
+    config::{DataType, SinkConfig, SinkContext, SinkDescription},
     event::{self, Event},
     serde::to_string,
     sinks::{
@@ -7,14 +8,14 @@ use crate::{
             encoding::{EncodingConfig, EncodingConfiguration},
             http::{HttpClient, HttpClientFuture},
             retries::{RetryAction, RetryLogic},
-            BatchConfig, BatchSettings, Buffer, Compression, PartitionBatchSink, PartitionBuffer,
-            PartitionInnerBuffer, ServiceBuilderExt, TowerCompat, TowerRequestConfig,
+            BatchConfig, BatchSettings, Buffer, Compression, InFlightLimit, PartitionBatchSink,
+            PartitionBuffer, PartitionInnerBuffer, ServiceBuilderExt, TowerCompat,
+            TowerRequestConfig,
         },
         Healthcheck, RouterSink,
     },
     template::{Template, TemplateError},
     tls::{TlsOptions, TlsSettings},
-    topology::config::{DataType, SinkConfig, SinkContext, SinkDescription},
 };
 use bytes::Bytes;
 use chrono::Utc;
@@ -122,7 +123,7 @@ enum GcsStorageClass {
 
 lazy_static! {
     static ref REQUEST_DEFAULTS: TowerRequestConfig = TowerRequestConfig {
-        in_flight_limit: Some(25),
+        in_flight_limit: InFlightLimit::Fixed(25),
         rate_limit_num: Some(25),
         ..Default::default()
     };

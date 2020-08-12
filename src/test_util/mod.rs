@@ -1,4 +1,10 @@
-use crate::{event::LogEvent, runtime::Runtime, trace, Event};
+use crate::{
+    config::{Config, ConfigDiff},
+    event::LogEvent,
+    runtime::Runtime,
+    topology::{self, RunningTopology},
+    trace, Event,
+};
 use futures::{
     compat::Stream01CompatExt, stream, FutureExt as _, SinkExt, Stream, StreamExt, TryFutureExt,
     TryStreamExt,
@@ -28,6 +34,8 @@ use tokio::{
 };
 use tokio_util::codec::{Encoder, FramedRead, FramedWrite, LinesCodec};
 
+pub mod stats;
+
 #[macro_export]
 macro_rules! assert_downcast_matches {
     ($e:expr, $t:ty, $v:pat) => {{
@@ -36,6 +44,68 @@ macro_rules! assert_downcast_matches {
             got => panic!("assertion failed: got wrong error variant {:?}", got),
         }
     }};
+}
+
+#[macro_export]
+macro_rules! assert_within {
+    // Adapted from std::assert_eq
+    ($expr:expr, $low:expr, $high:expr) => ({
+        match (&$expr, &$low, &$high) {
+            (expr, low, high) => {
+                if *expr < *low {
+                    panic!(
+                        r#"assertion failed: `(expr < low)`
+expr: {} = `{:?}`,
+ low: `{:?}`"#,
+                        stringify!($expr),
+                        &*expr,
+                        &*low
+                    );
+                }
+                if *expr > *high {
+                    panic!(
+                        r#"assertion failed: `(expr > high)`
+expr: {} = `{:?}`,
+high: `{:?}`"#,
+                        stringify!($expr),
+                        &*expr,
+                        &*high
+                    );
+                }
+            }
+        }
+    });
+    ($expr:expr, $low:expr, $high:expr, $($arg:tt)+) => ({
+        match (&$expr, &$low, &$high) {
+            (expr, low, high) => {
+                if *expr < *low {
+                    panic!(
+                        r#"assertion failed: `(expr < low)`
+expr: {} = `{:?}`,
+ low: `{:?}`
+{}"#,
+                        stringify!($expr),
+                        &*expr,
+                        &*low,
+                        format_args!($($arg)+)
+                    );
+                }
+                if *expr > *high {
+                    panic!(
+                        r#"assertion failed: `(expr > high)`
+expr: {} = `{:?}`,
+high: `{:?}`
+{}"#,
+                        stringify!($expr),
+                        &*expr,
+                        &*high,
+                        format_args!($($arg)+)
+                    );
+                }
+            }
+        }
+    });
+
 }
 
 static NEXT_PORT: AtomicUsize = AtomicUsize::new(1234);
@@ -543,4 +613,15 @@ fn random_pseudonested_map(len: usize, breadth: usize, depth: usize) -> HashMap<
         }
     }
     tree
+}
+
+pub async fn start_topology(
+    config: Config,
+    require_healthy: bool,
+) -> (RunningTopology, mpsc::UnboundedReceiver<()>) {
+    let diff = ConfigDiff::initial(&config);
+    let pieces = topology::validate(&config, &diff).await.unwrap();
+    topology::start_validated(config, diff, pieces, require_healthy)
+        .await
+        .unwrap()
 }

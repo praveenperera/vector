@@ -1,6 +1,7 @@
 mod request;
 
 use crate::{
+    config::{DataType, SinkConfig, SinkContext},
     dns::Resolver,
     event::{self, Event, LogEvent, Value},
     region::RegionOrEndpoint,
@@ -12,7 +13,6 @@ use crate::{
         TowerRequestSettings, VecBuffer,
     },
     template::Template,
-    topology::config::{DataType, SinkConfig, SinkContext},
 };
 use bytes::Bytes;
 use chrono::{Duration, Utc};
@@ -180,7 +180,7 @@ impl SinkConfig for CloudwatchLogsSinkConfig {
 
         let client = self.create_client(cx.resolver())?;
         let svc = ServiceBuilder::new()
-            .concurrency_limit(request.in_flight_limit)
+            .concurrency_limit(request.in_flight_limit.unwrap())
             .service(CloudwatchLogsPartitionSvc::new(
                 self.clone(),
                 client.clone(),
@@ -246,7 +246,7 @@ impl Service<PartitionInnerBuffer<Vec<InputLogEvent>, CloudwatchKey>>
             svc.clone()
         } else {
             let svc = ServiceBuilder::new()
-                .buffer(self.request_settings.in_flight_limit)
+                .buffer(self.request_settings.in_flight_limit.unwrap())
                 .concurrency_limit(1)
                 .rate_limit(
                     self.request_settings.rate_limit_num,
@@ -844,9 +844,9 @@ mod tests {
 mod integration_tests {
     use super::*;
     use crate::{
+        config::{SinkConfig, SinkContext},
         region::RegionOrEndpoint,
         test_util::{random_lines, random_lines_with_stream, random_string, runtime},
-        topology::config::{SinkConfig, SinkContext},
     };
     use futures01::{
         stream::{self, Stream},

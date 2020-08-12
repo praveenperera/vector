@@ -1,12 +1,13 @@
 use crate::{
+    config::{DataType, SinkConfig, SinkContext, SinkDescription},
     event::{self, Event},
     sinks::util::{
         encoding::{EncodingConfig, EncodingConfiguration},
         http::{Auth, BatchedHttpSink, HttpClient, HttpSink},
-        BatchConfig, BatchSettings, Buffer, Compression, TowerRequestConfig, UriSerde,
+        BatchConfig, BatchSettings, Buffer, Compression, InFlightLimit, TowerRequestConfig,
+        UriSerde,
     },
     tls::{TlsOptions, TlsSettings},
-    topology::config::{DataType, SinkConfig, SinkContext, SinkDescription},
 };
 use futures::{FutureExt, TryFutureExt};
 use futures01::{future, Sink};
@@ -70,7 +71,7 @@ fn default_config(e: Encoding) -> HttpSinkConfig {
 
 lazy_static! {
     static ref REQUEST_DEFAULTS: TowerRequestConfig = TowerRequestConfig {
-        in_flight_limit: Some(10),
+        in_flight_limit: InFlightLimit::Fixed(10),
         timeout_secs: Some(30),
         rate_limit_num: Some(10),
         ..Default::default()
@@ -289,11 +290,11 @@ mod tests {
     use super::*;
     use crate::{
         assert_downcast_matches,
+        config::SinkContext,
         sinks::http::HttpSinkConfig,
         sinks::util::http::HttpSink,
         sinks::util::test::build_test_server,
         test_util::{next_addr, random_lines_with_stream},
-        topology::config::SinkContext,
     };
     use bytes05::buf::BufExt;
     use futures::compat::Future01CompatExt;
