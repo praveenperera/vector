@@ -145,8 +145,6 @@ where
     }
 }
 
-// Safety: `L` is never pinned and we use no unsafe pin projections
-// therefore this safe.
 impl<L: RetryLogic> Unpin for RetryPolicyFuture<L> {}
 
 impl<L: RetryLogic> Future for RetryPolicyFuture<L> {
